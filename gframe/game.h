@@ -412,6 +412,7 @@ public:
 	irr::gui::IGUIComboBox* cbDBLFList;
 	irr::gui::IGUIComboBox* cbDBDecks;
 	irr::gui::IGUIButton* btnClearDeck;
+	irr::gui::IGUIButton* btnGetDeck;
 	irr::gui::IGUIButton* btnSortDeck;
 	irr::gui::IGUIButton* btnShuffleDeck;
 	irr::gui::IGUIButton* btnSaveDeck;
@@ -617,6 +618,7 @@ extern Game* mainGame;
 #define BUTTON_REPLAY_SWAP			325
 #define BUTTON_REPLAY_SAVE			330
 #define BUTTON_REPLAY_CANCEL		331
+#define BUTTON_GET_DECK				337
 #define BUTTON_BOT_START			340
 #define LISTBOX_BOT_LIST			341
 #define CHECKBOX_BOT_OLD_RULE		342

@@ -222,11 +222,6 @@ public:
 	bool is_building;
 	bool is_siding;
 
-	int displayedcard;
-	irr::core::dimension2d<irr::u32> window_size;
-
-	CGUISkinSystem *skinSystem;
-	
 	ClientField dField;
 	DeckBuilder deckBuilder;
 	MenuHandler menuHandler;

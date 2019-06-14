@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 #include <list>
+#include <irrKlang.h>
+#pragma comment(lib, "irrKlang.lib")
 #include "CGUISkinSystem/CGUISkinSystem.h"
 
 namespace ygo {
@@ -34,22 +36,26 @@ struct Config {
 	int chkWaitChain;
 	int chkIgnore1;
 	int chkIgnore2;
-	int chkHideSetname;
-	int chkHideHintButton;
+	int hide_setname;
+	int hide_hint_button;
 	int control_mode;
 	int draw_field_spell;
 	int separate_clear_button;
 	int auto_search_limit;
+	int search_multiple_keywords;
 	int chkIgnoreDeckChanges;
 	int defaultOT;
 	int enable_bot_mode;
 	int quick_animation;
-	bool enable_sound;
-	bool enable_music;
-	double sound_volume;
-	double music_volume;
-	int music_mode;
+	int auto_save_replay;
+	int prefer_expansion_script;
 	int skin_index;
+	int botduel;
+	int mutechat;
+	bool enablesound;
+	double soundvolume;
+	bool enablemusic;
+	double musicvolume;
 };
 
 struct DuelInfo {
@@ -140,6 +146,8 @@ public:
 	void ErrorLog(const char* msgbuf);
 	void ClearTextures();
 	void CloseDuelWindow();
+	void PlayMusic(char* song, bool loop);
+	void PlaySound(char* sound);
 	
 	void DrawAvatars();
 	void DrawRanks();
@@ -265,21 +273,21 @@ public:
 	irr::gui::IGUIListBox* lstLog;
 	irr::gui::IGUIButton* btnClearLog;
 	irr::gui::IGUIButton* btnSaveLog;
+	irr::gui::IGUICheckBox* chkEnableSound;
+	irr::gui::IGUICheckBox* chkEnableMusic;
+	irr::gui::IGUIScrollBar* scrSound;
+	irr::gui::IGUIScrollBar* scrMusic;
 	irr::gui::IGUICheckBox* chkMAutoPos;
 	irr::gui::IGUICheckBox* chkSTAutoPos;
 	irr::gui::IGUICheckBox* chkRandomPos;
 	irr::gui::IGUICheckBox* chkAutoChain;
 	irr::gui::IGUICheckBox* chkWaitChain;
 	irr::gui::IGUICheckBox* chkQuickAnimation;
-	irr::gui::IGUICheckBox* chkHideSetname;
-	irr::gui::IGUICheckBox* chkHideHintButton;
+	irr::gui::IGUICheckBox* chkAutoSaveReplay;
 	irr::gui::IGUICheckBox* chkIgnoreDeckChanges;
 	irr::gui::IGUICheckBox* chkAutoSearch;
-	irr::gui::IGUICheckBox* chkEnableSound;
-	irr::gui::IGUICheckBox* chkEnableMusic;
-	irr::gui::IGUIScrollBar* scrSoundVolume;
-	irr::gui::IGUIScrollBar* scrMusicVolume;
-	irr::gui::IGUICheckBox* chkMusicMode;
+	irr::gui::IGUICheckBox* chkMultiKeywords;
+	irr::gui::IGUICheckBox* chkPreferExpansionScript;
 	//main menu
 	irr::gui::IGUIWindow* wMainMenu;
 	irr::gui::IGUIButton* btnLanMode;
@@ -518,6 +526,9 @@ public:
 	irr::gui::IGUIButton* btnChainWhenAvail;
 	//cancel or finish
 	irr::gui::IGUIButton* btnCancelOrFinish;
+	//soundEngine
+	irrklang::ISoundEngine* engineSound;
+	irrklang::ISoundEngine* engineMusic;
 };
 
 extern Game* mainGame;
@@ -628,6 +639,8 @@ extern Game* mainGame;
 #define BUTTON_CLEAR_LOG			270
 #define LISTBOX_LOG					271
 #define SCROLL_CARDTEXT				280
+#define SCROLL_SOUND				281
+#define SCROLL_MUSIC				282
 #define BUTTON_DISPLAY_0			290
 #define BUTTON_DISPLAY_1			291
 #define BUTTON_DISPLAY_2			292
@@ -670,11 +683,12 @@ extern Game* mainGame;
 #define LISTBOX_SINGLEPLAY_LIST		350
 #define BUTTON_LOAD_SINGLEPLAY		351
 #define BUTTON_CANCEL_SINGLEPLAY	352
+#define CHECKBOX_ENABLE_SOUND		353
+#define CHECKBOX_ENABLE_MUSIC		354
 #define BUTTON_SET_DEFAULT_DECK		355
 #define CHECKBOX_AUTO_SEARCH		360
-#define CHECKBOX_ENABLE_SOUND		361
-#define CHECKBOX_ENABLE_MUSIC		362
-#define SCROLL_VOLUME				363
+#define CHECKBOX_MULTI_KEYWORDS		372
+#define CHECKBOX_PREFER_EXPANSION	373
 #define CHECKBOX_DISABLE_CHAT		364
 #define CHECKBOX_QUICK_ANIMATION	369
 

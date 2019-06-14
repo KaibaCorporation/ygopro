@@ -2,7 +2,6 @@
 #include "materials.h"
 #include "image_manager.h"
 #include "deck_manager.h"
-#include "sound_manager.h"
 #include "duelclient.h"
 #include "../ocgcore/common.h"
 
@@ -382,7 +381,8 @@ void Game::DrawCard(ClientCard* pcard) {
 		matManager.mTexture.setTexture(0, imageManager.tChainTarget);
 		driver->setMaterial(matManager.mTexture);
 		driver->drawVertexPrimitiveList(matManager.vSymbol, 4, matManager.iRectangle, 2);
-	} else if(pcard->is_disabled && (pcard->location & LOCATION_ONFIELD) && (pcard->position & POS_FACEUP)) {
+	} else if((pcard->status & (STATUS_DISABLED | STATUS_FORBIDDEN))
+		&& (pcard->location & LOCATION_ONFIELD) && (pcard->position & POS_FACEUP)) {
 		matManager.mTexture.setTexture(0, imageManager.tNegated);
 		driver->setMaterial(matManager.mTexture);
 		driver->drawVertexPrimitiveList(matManager.vNegate, 4, matManager.iRectangle, 2);
@@ -1054,7 +1054,6 @@ void Game::HideElement(irr::gui::IGUIElement * win, bool set_action) {
 	fadingList.push_back(fu);
 }
 void Game::PopupElement(irr::gui::IGUIElement * element, int hideframe) {
-	soundManager.PlayDialogSound(element);
 	element->getParent()->bringToFront(element);
 	if(!mainGame->is_building)
 		dField.panel = element;

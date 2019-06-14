@@ -3,7 +3,6 @@
 #include "data_manager.h"
 #include "deck_manager.h"
 #include "image_manager.h"
-#include "sound_manager.h"
 #include "game.h"
 #include "duelclient.h"
 #include <algorithm>
@@ -89,6 +88,7 @@ void DeckBuilder::Initialize() {
 	prev_sel = -1;
 	is_modified = false;
 	mainGame->device->setEventReceiver(this);
+	InstantSearch();
 }
 void DeckBuilder::Terminate() {
 	mainGame->is_building = false;
@@ -125,11 +125,10 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			break;
 		switch(event.GUIEvent.EventType) {
 		case irr::gui::EGET_BUTTON_CLICKED: {
-			soundManager.PlaySoundEffect(SOUND_BUTTON);
 			switch(id) {
 			case BUTTON_CLEAR_DECK: {
 				mainGame->gMutex.Lock();
-				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, (wchar_t*)dataManager.GetSysString(1339));
+				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, dataManager.GetSysString(1339));
 				mainGame->PopupElement(mainGame->wQuery);
 				mainGame->gMutex.Unlock();
 				prev_operation = id;
@@ -193,7 +192,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				mainGame->gMutex.Lock();
 				wchar_t textBuffer[256];
 				myswprintf(textBuffer, L"%ls\n%ls", mainGame->cbDBDecks->getItem(sel), dataManager.GetSysString(1337));
-				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, (wchar_t*)textBuffer);
+				mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, textBuffer);
 				mainGame->PopupElement(mainGame->wQuery);
 				mainGame->gMutex.Unlock();
 				prev_operation = id;
@@ -203,7 +202,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			case BUTTON_LEAVE_GAME: {
 				if(is_modified && !mainGame->chkIgnoreDeckChanges->isChecked()) {
 					mainGame->gMutex.Lock();
-					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, (wchar_t*)dataManager.GetSysString(1356));
+					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, dataManager.GetSysString(1356));
 					mainGame->PopupElement(mainGame->wQuery);
 					mainGame->gMutex.Unlock();
 					prev_operation = id;
@@ -240,7 +239,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			case BUTTON_SIDE_OK: {
 				if(deckManager.current_deck.main.size() != pre_mainc || deckManager.current_deck.extra.size() != pre_extrac
 				        || deckManager.current_deck.side.size() != pre_sidec) {
-					soundManager.PlaySoundEffect(SOUND_INFO);
 					mainGame->env->addMessageBox(L"", dataManager.GetSysString(1410));
 					break;
 				}
@@ -341,7 +339,24 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			break;
 		}
 		case irr::gui::EGET_SCROLL_BAR_CHANGED: {
-			break;
+			switch (id) {
+				case SCROLL_CARDTEXT: {
+					u32 pos = mainGame->scrCardText->getPos();
+					mainGame->SetStaticText(mainGame->stText, mainGame->stText->getRelativePosition().getWidth() - 30, mainGame->textFont, mainGame->showingtext, pos);
+					break;
+				}
+				case SCROLL_SOUND: {
+					mainGame->gameConf.soundvolume = (double)mainGame->scrSound->getPos() / 100;
+					mainGame->engineSound->setSoundVolume(mainGame->gameConf.soundvolume);
+					break;
+				}
+				case SCROLL_MUSIC: {
+					mainGame->gameConf.musicvolume = (double)mainGame->scrMusic->getPos() / 100;
+					mainGame->engineMusic->setSoundVolume(mainGame->gameConf.musicvolume);
+					break;
+				}
+				break;
+			}
 		}
 		case irr::gui::EGET_EDITBOX_ENTER: {
 			switch(id) {
@@ -361,6 +376,22 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			}
 			break;
 		}
+		case irr::gui::EGET_CHECKBOX_CHANGED: {
+			s32 id = event.GUIEvent.Caller->getID();
+			switch (id) {
+			case CHECKBOX_ENABLE_SOUND: {
+				mainGame->gameConf.enablesound = mainGame->chkEnableSound->isChecked();
+				break;
+			}
+			case CHECKBOX_ENABLE_MUSIC: {
+				mainGame->gameConf.enablemusic = mainGame->chkEnableMusic->isChecked();
+				if (!mainGame->gameConf.enablemusic)
+					mainGame->engineMusic->stopAllSounds();
+				break;
+			}
+			}
+			break;
+		}
 		case irr::gui::EGET_COMBO_BOX_CHANGED: {
 			switch(id) {
 			case COMBOBOX_DBLFLIST: {
@@ -370,7 +401,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			case COMBOBOX_DBDECKS: {
 				if(is_modified && !mainGame->chkIgnoreDeckChanges->isChecked()) {
 					mainGame->gMutex.Lock();
-					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, (wchar_t*)dataManager.GetSysString(1356));
+					mainGame->SetStaticText(mainGame->stQMessage, 310, mainGame->textFont, dataManager.GetSysString(1356));
 					mainGame->PopupElement(mainGame->wQuery);
 					mainGame->gMutex.Unlock();
 					prev_operation = id;
@@ -530,7 +561,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			is_starting_dragging = false;
 			if(!is_draging)
 				break;
-			soundManager.PlaySoundEffect(SOUND_CARD_DROP);
 			bool pushed = false;
 			if(hovered_pos == 1)
 				pushed = push_main(draging_pointer, hovered_seq);
@@ -560,7 +590,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 				auto pointer = dataManager.GetCodePointer(hovered_code);
 				if(pointer == dataManager._datas.end())
 					break;
-				soundManager.PlaySoundEffect(SOUND_CARD_DROP);
 				if(hovered_pos == 1) {
 					if(push_side(pointer))
 						pop_main(hovered_seq);
@@ -578,7 +607,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			if(!is_draging) {
 				if(hovered_pos == 0 || hovered_seq == -1)
 					break;
-				soundManager.PlaySoundEffect(SOUND_CARD_DROP);
 				if(hovered_pos == 1) {
 					pop_main(hovered_seq);
 				} else if(hovered_pos == 2) {
@@ -595,7 +623,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 						push_side(pointer);
 				}
 			} else {
-				soundManager.PlaySoundEffect(SOUND_CARD_PICK);
 				if(click_pos == 1) {
 					push_side(draging_pointer);
 				} else if(click_pos == 2) {
@@ -622,7 +649,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 			auto pointer = dataManager.GetCodePointer(hovered_code);
 			if(!check_limit(pointer))
 				break;
-			soundManager.PlaySoundEffect(SOUND_CARD_PICK);
 			if (hovered_pos == 1) {
 				if(!push_main(pointer))
 					push_side(pointer);
@@ -641,7 +667,6 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		case irr::EMIE_MOUSE_MOVED: {
 			if(is_starting_dragging) {
 				is_draging = true;
-				soundManager.PlaySoundEffect(SOUND_CARD_PICK);
 				if(hovered_pos == 1)
 					pop_main(hovered_seq);
 				else if(hovered_pos == 2)
@@ -784,14 +809,78 @@ void DeckBuilder::StartFilter() {
 }
 void DeckBuilder::FilterCards() {
 	results.clear();
+	struct element_t {
+		std::wstring keyword;
+		int setcode;
+		enum class type_t {
+			all,
+			name,
+			setcode
+		} type;
+		bool exclude;
+		element_t(): setcode(0), type(type_t::all), exclude(false) {}
+	};
 	const wchar_t* pstr = mainGame->ebCardName->getText();
-	unsigned int set_code = 0;
-	if(pstr[0] == L'@')
-		set_code = dataManager.GetSetCode(&pstr[1]);
-	else
-		set_code = dataManager.GetSetCode(&pstr[0]);
-	if(pstr[0] == 0 || (pstr[0] == L'$' && pstr[1] == 0) || (pstr[0] == L'@' && pstr[1] == 0))
-		pstr = 0;
+	std::wstring str = std::wstring(pstr);
+	std::vector<element_t> query_elements;
+	if(mainGame->gameConf.search_multiple_keywords) {
+		const wchar_t separator = mainGame->gameConf.search_multiple_keywords == 1 ? L' ' : L'+';
+		const wchar_t minussign = L'-';
+		const wchar_t quotation = L'\"';
+		size_t element_start = 0;
+		for(;;) {
+			element_start = str.find_first_not_of(separator, element_start);
+			if(element_start == std::wstring::npos)
+				break;
+			element_t element;
+			if(str[element_start] == minussign) {
+				element.exclude = true;
+				element_start++;
+			}
+			if(element_start >= str.size())
+				break;
+			if(str[element_start] == L'$') {
+				element.type = element_t::type_t::name;
+				element_start++;
+			} else if(str[element_start] == L'@') {
+				element.type = element_t::type_t::setcode;
+				element_start++;
+			}
+			if(element_start >= str.size())
+				break;
+			wchar_t delimiter = separator;
+			if(str[element_start] == quotation) {
+				delimiter = quotation;
+				element_start++;
+			}
+			size_t element_end = str.find_first_of(delimiter, element_start);
+			if(element_end != std::wstring::npos) {
+				size_t length = element_end - element_start;
+				element.keyword = str.substr(element_start, length);
+			} else
+				element.keyword = str.substr(element_start);
+			element.setcode = dataManager.GetSetCode(element.keyword.c_str());
+			query_elements.push_back(element);
+			if(element_end == std::wstring::npos)
+				break;
+			element_start = element_end + 1;
+		}
+	} else {
+		element_t element;
+		size_t element_start = 0;
+		if(str[element_start] == L'$') {
+			element.type = element_t::type_t::name;
+			element_start++;
+		} else if(str[element_start] == L'@') {
+			element.type = element_t::type_t::setcode;
+			element_start++;
+		}
+		if(element_start < str.size()) {
+			element.keyword = str.substr(element_start);
+			element.setcode = dataManager.GetSetCode(element.keyword.c_str());
+			query_elements.push_back(element);
+		}
+	}
 	auto strpointer = dataManager._strings.begin();
 	for(code_pointer ptr = dataManager._datas.begin(); ptr != dataManager._datas.end(); ++ptr, ++strpointer) {
 		const CardDataC& data = ptr->second;
@@ -865,24 +954,35 @@ void DeckBuilder::FilterCards() {
 			if(filter_lm == 7 && data.ot != 4)
 				continue;
 		}
-		if(pstr) {
-			if(pstr[0] == L'$') {
-				if(!CardNameContains(text.name.c_str(), &pstr[1]))
-					continue;
-			} else if(pstr[0] == L'@' && set_code) {
-				if(!check_set_code(data, set_code)) continue;
+		bool is_target = true;
+		for (auto elements_iterator = query_elements.begin(); elements_iterator != query_elements.end(); ++elements_iterator) {
+			bool match = false;
+			if (elements_iterator->type == element_t::type_t::name) {
+				match = CardNameContains(text.name.c_str(), elements_iterator->keyword.c_str());
+			} else if (elements_iterator->type == element_t::type_t::setcode) {
+				match = elements_iterator->setcode && check_set_code(data, elements_iterator->setcode);
 			} else {
-				int trycode = BufferIO::GetVal(pstr);
+				int trycode = BufferIO::GetVal(elements_iterator->keyword.c_str());
 				bool tryresult = dataManager.GetData(trycode, 0);
-				if(!tryresult && !CardNameContains(text.name.c_str(), pstr) && text.text.find(pstr) == std::wstring::npos
-					&& (!set_code || !check_set_code(data, set_code)))
-					continue;
-				if (tryresult && data.code != trycode
-					&& !(data.alias == trycode && (data.alias - data.code < CARD_ARTWORK_VERSIONS_OFFSET || data.code - data.alias < CARD_ARTWORK_VERSIONS_OFFSET)))
-					continue;
+				if(!tryresult) {
+					match = CardNameContains(text.name.c_str(), elements_iterator->keyword.c_str())
+						|| text.text.find(elements_iterator->keyword) != std::wstring::npos
+						|| (elements_iterator->setcode && check_set_code(data, elements_iterator->setcode));
+				} else {
+					match = data.code == trycode || data.alias == trycode;
+				}
+			}
+			if(elements_iterator->exclude)
+				match = !match;
+			if(!match) {
+				is_target = false;
+				break;
 			}
 		}
-		results.push_back(ptr);
+		if(is_target)
+			results.push_back(ptr);
+		else
+			continue;
 	}
 	myswprintf(result_string, L"%d", results.size());
 	if(results.size() > 7) {

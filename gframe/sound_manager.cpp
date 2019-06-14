@@ -210,8 +210,6 @@ void SoundManager::PlayBGM(int scene) {
 #ifdef YGOPRO_USE_IRRKLANG
 	if(!mainGame->chkEnableMusic->isChecked())
 		return;
-	if(!mainGame->chkMusicMode->isChecked())
-		scene = BGM_ALL;
 	char BGMName[1024];
 	if(scene != bgm_scene || (soundBGM && soundBGM->isFinished())) {
 		int count = BGMList[scene].size();

@@ -1,3 +1,7 @@
+## NOTICE: THIS REPOSITORY IS NO LONGER BEING MAINTAINED, ALL FILES HAVE BEEN MOVED TO: https://github.com/Kaiba-Corporation/ygopro
+
+## IF YOU ARE INTERESTED IN CONTRIBUTING TO YGOPRO TDOANE, PLEASE READ HERE: http://ygopro.club/index.php?/topic/8495-hiring-developers/
+
 ## YGOPro
 A script engine for "yu-gi-oh!" and sample gui
 
